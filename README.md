@@ -62,7 +62,7 @@ terraform -v
 rm terraform_1.6.4_linux_amd64.zip
 ```
 ---------------------------------------------------------------------
-### Task-2: Install Python 3, pip, AWS CLI, and Ansible
+### Task-2: Install pip, AWS CLI, and Ansible
 Install Python 3 and the required packages:
 ```
 sudo apt-get update
@@ -345,7 +345,7 @@ sudo apt install git -y
 ```
 Download the **Java Code** that we are going to use in the CICD pipeline.
 ```
-wget https://devops-e-e.s3.ap-south-1.amazonaws.com/hello-world-master.zip
+wget https://devosp-essentials-lab.s3.amazonaws.com/hello-world-master.zip
 ```
 ```
 unzip hello-world-master.zip
@@ -359,8 +359,6 @@ cd hello-world-master
 ls
 ```
 ```
-make sure the pom file has maven-war-plugin version 3.2.3
-
 git init .
 ```
 To set the `User Identity` ie... `email and user name.` you can use below:
@@ -578,7 +576,7 @@ sudo cat /var/lib/jenkins/secrets/initialAdminPassword
 3. Once the installation is completed, click on **Go back to the top page**.
 4. On Home Page select **Manage Jenkins** > **Tool**.
 5. Inside Tool Configuration, look for **Maven installations**, click **Add Maven**. 
-6. Give the **Name as "Maven"**, choose **Version as 3.9.5**, and **Save** the configuration.
+6. Give the **Name as "Maven"**, choose **Version as 3.9.8**, and **Save** the configuration.
 7. Now you need to make a project for your application build, that selects **New Item** from the Home Page of Jenkins
 8. Enter an item name as **hello-world** and select the project as **Maven Project** and then **click OK.**
    ( You will be prompted to the configure page inside the hello-world project.)
@@ -600,7 +598,7 @@ sudo cat /var/lib/jenkins/secrets/initialAdminPassword
 
 ![image](https://github.com/janjiralakirankumar/DevOpsEssentials/assets/137407373/d5dde194-f10d-4b4d-a20c-890e9ca3e392)
 
-* Now, SSH into the Jenkins server (Make sure that you are the root user and Install the Tomcat web server)
+* Now, SSH into the Jenkins server 
 * **Note:** (If you are already in Jenkins Server, again SSH is not needed.)
 
 1. Follow below steps:
@@ -608,23 +606,23 @@ sudo cat /var/lib/jenkins/secrets/initialAdminPassword
 sudo apt update
 ```
 ```
-sudo apt install tomcat9 tomcat9-admin -y
+sudo apt install tomcat10 tomcat10-admin -y
 ```
 ```
 ss -ltn
 ```
 when you run `ss -ltn` command you'll see a list of `TCP sockets` that are in a listening state, and the output will include information such as the `local address,` `port,` and the `state of each socket.`
 ```
-sudo systemctl enable tomcat9
+sudo systemctl enable tomcat10
 ```
 Now we need to navigate to **server.xml** to change the Tomcat port number from **8080 to 9999**.
 (As port number 8080 is already being used by the Jenkins website)
 ```
-sudo vi /etc/tomcat9/server.xml
+sudo vi /etc/tomcat10/server.xml
 ```
 **(Optional step):** If you are unable to open the file then change the permissions by using the below command.
 ```
-sudo chmod 766 /etc/tomcat9/server.xml
+sudo chmod 766 /etc/tomcat10/server.xml
 ```
 #### Change 8080 to 9999
 * press esc & Enter **":"** and copy paste below code and hit enter
@@ -635,18 +633,18 @@ Save the file using `ESCAPE+:wq!`
 
 * To Verify whether the Port is changed, execute the below Command.
 ```
-cat /etc/tomcat9/server.xml
+cat /etc/tomcat10/server.xml
 ```
 **(Optional step):** If you are unable to open the file then change the permissions by using the below command.
 ```
-sudo chmod 766 /etc/tomcat9/server.xml
+sudo chmod 766 /etc/tomcat10/server.xml
 ```
 Now restart the system for the changes to take effect
 ```
-sudo service tomcat9 restart
+sudo service tomcat10 restart
 ```
 ```
-sudo service tomcat9 status
+sudo service tomcat10 status
 ```
 **To exit**, press **ctrl+c**
 
@@ -657,7 +655,7 @@ sudo service tomcat9 status
 * Now you can check the Tomcat running on **port 9999** on the same machine.
 * We need to copy the **.war** file created in the previous Jenkins build from the Jenkins workspace to tomcat webapps directory to serve the web content
 ```
-sudo cp -R /var/lib/jenkins/workspace/hello-world/target/hello-world-war-1.0.0.war /var/lib/tomcat9/webapps
+sudo cp -R /var/lib/jenkins/workspace/hello-world/target/hello-world-war-1.0.0.war /var/lib/tomcat10/webapps
 ```
 The above command is copying a `WAR (Web Application Archive)` file from the Jenkins workspace to the Tomcat web apps directory. Let's break down the command:
 
@@ -677,10 +675,10 @@ This command assumes that your Jenkins job has built a WAR file named `hello-wor
 * Now, you can see that Tomcat is now serving your web page
 * Now, Stop tomcat9 and remove it. Otherwise, it will slow down the Jenkins server.
 ```
-sudo service tomcat9 stop
+sudo service tomcat10 stop
 ```
 ```
-sudo apt remove tomcat9 -y
+sudo apt remove tomcat10 -y
 ```
 ---------------------------------------------------------------------
 **Summary:**
@@ -734,10 +732,10 @@ Then, Click on **Add Webhook**.
 
 #### =============================END of LAB-04=============================
 ---
-## Lab-5: Configuring Docker Machine as Jenkins Slave, build and deploy code in Docker Host as a container
+## Lab-5: Configuring Docker Machine as Jenkins Agent, build and deploy code in Docker Host as a container
 
 **Objective:**
-In this lab, you will set up a Docker container as a Jenkins slave, build a Docker image for a Java web application, and deploy it in a Docker container.
+In this lab, you will set up a Docker container as a Jenkins Agent, build a Docker image for a Java web application, and deploy it in a Docker container.
 
 ![image](https://github.com/janjiralakirankumar/DevOpsEssentials/assets/137407373/9139c0b6-2571-4606-84d0-22dac79d479e)
 
@@ -749,11 +747,11 @@ sudo su
 ```
 * Generate a key-pair
 ```
-ssh-keygen
+ssh-keygen -t ed25519
 ```
 * Add the public key to the authorized_keys
 ```
-cat /root/.ssh/id_rsa.pub
+cat /root/.ssh/id_ed25519.pub
 ```
 * Copy the contents of the file and paste in authorized_keys
 ```
@@ -761,14 +759,14 @@ vi /root/.ssh/authorized_keys
 ```
 * Save the file using `ESCAPE+:wq!`
 
-### Task-1: Configuring Docker Machine as Jenkins Slave.
+### Task-1: Configuring Docker Machine as Jenkins Agent.
 
 1. Go to **Jenkin's home page** and click on the **Manage Jenkins** and **Nodes**.
-2. Click on **New Node** in the next window. Give the node name as **docker-slave** and Select **"permanent agent"**
-3. Fill out the details for the node docker-slave as given below.
-* The name should be given as **docker-slave**,
+2. Click on **New Node** in the next window. Give the node name as **docker-agent** and Select **"permanent agent"**
+3. Fill out the details for the node docker-agent as given below.
+* The name should be given as **docker-agent**,
 * Remote Root Directory as **/home/ubuntu**,
-* labels to be **Slave-Nodes**,
+* labels to be **Slave-Agents**,
 * usage to be given as **"use this node as much as possible"**
 * Launch method to be set as **"launch agents via SSH"**.
 * In the host section, give the **Public IP of the Docker instance**.
@@ -780,7 +778,7 @@ vi /root/.ssh/authorized_keys
 To get the private key, Go to your **Docker-server** and run below command.
 ```
 cd /root/.ssh
-cat id_rsa
+cat id_ed25519
 ```
 * Copy the entire content, including the **first and last lines**. Paste it into the space provided for the **private key** then click on **Add**.
 * Now, In SSH Credentials, choose the newly created **root** credentials.
@@ -828,11 +826,11 @@ Once you build this Docker image and run a container based on it, your Java web 
 1. Go to your **Jenkins Home page**, click on the **drop-down** on **hello-world project**, and select Configure 
 tab.
 2. In **General Tab**, Select **Restrict where this project can be run** and enter Label Expression as 
-**Slave-Nodes.**
+**Slave-Agents**
 3. Go to **Post Steps Tab**, select **"Run only if the build succeeds"** then click on **Add post-build** step select **Execute shell** from the drop-down and copy paste the below commands in the shell and **Save**
 
 **Execute shell commands in Jenkins:**
-#### Note: You may replace 'yourname' with your actual first name (lines 3 and 5).
+
 
 ```
 #!/bin/bash
@@ -886,8 +884,8 @@ To access the Page In Browser Type **"http:// < Your Docker Host Public IP >:808
 * **Example:** http://3.95.192.77:8080/hello-world-war-1.0.0/
 ---
 **Summary:**
-1. Configure a Jenkins slave node ie... named as "docker-slave."
-2. Configure the slave node to use SSH for communication.
+1. Configure a Jenkins agent node ie... named as "docker-agent"
+2. Configure the agent node to use SSH for communication.
 3. Set up a Dockerfile to define the Docker image for the Java web application.
 4. Create a Jenkins job to build and deploy the Java web application in a Docker container.
 5. Add post-build steps to the Jenkins job to copy the WAR file, build the Docker image, and run a Docker container.
